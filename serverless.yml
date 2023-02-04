@@ -1,9 +1,12 @@
-service: tflambdademo
+service: SkLambda-tree
+
+plugins:
+  - serverless-python-requirements
 
 provider:
   name: aws
-  region: eu-west-1
-  runtime: python3.6
+  region: us-east-1
+  runtime: python3.7
   stage: dev
 
   iamRoleStatements:
@@ -28,6 +31,9 @@ provider:
 functions:
   upload:
     handler: upload.uploadHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
     timeout: 30
     events:
       - http:
@@ -36,6 +42,9 @@ functions:
 
   train:
     handler: train.trainHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
     memorySize: 3008
     timeout: 30
     events:
@@ -45,6 +54,9 @@ functions:
 
   infer:
     handler: infer.inferHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
     memorySize: 3008
     timeout: 30
     events:
@@ -54,6 +66,9 @@ functions:
 
   inferqueue:
     handler: inferqueue.inferqueueHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
     memorySize: 3008
     timeout: 900
     events:
@@ -62,8 +77,6 @@ functions:
           method: post
 
 
-plugins:
-  - serverless-python-requirements
 custom:
   pythonRequirements:
     dockerizePip: true
