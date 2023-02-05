@@ -75,7 +75,7 @@ python client_api_infer.py
 ```
 aws s3 rm s3://serverless-ml-1 --recursive
 
-sudo serverless remove --stage dev 
+serverless remove --stage dev 
 ```
 
 # Using data and extending the basic idea from these sources:
