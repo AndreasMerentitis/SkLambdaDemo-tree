@@ -9,7 +9,7 @@ import time
 
 import boto3
 
-import census_data
+from census import Census
 
 import logging
 
