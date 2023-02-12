@@ -1,184 +1,174 @@
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Download and clean the Census Income Dataset."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import json
+import logging
 import os
-import sys
+import pickle
 
-# pylint: disable=wrong-import-order
-from absl import app as absl_app
-from absl import flags
-from six.moves import urllib
-import tensorflow as tf
-# pylint: enable=wrong-import-order
-
+import boto3
+import numpy as np
+import pandas as pd
+import requests
+from sklearn.compose import make_column_transformer
+from sklearn.datasets.base import Bunch
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 DATA_URL = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult'
 TRAINING_FILE = 'adult.data'
 TRAINING_URL = '%s/%s' % (DATA_URL, TRAINING_FILE)
 EVAL_FILE = 'adult.test'
 EVAL_URL = '%s/%s' % (DATA_URL, EVAL_FILE)
+S3_path = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult'
+
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
+
+FILE_DIR = '/tmp/'
+BUCKET = os.environ['BUCKET']
+
+CENSUS_DATASET = (
+    "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",
+    "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.names",
+    "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test",
+)
+
+names = [
+    'age',
+    'workclass',
+    'fnlwgt',
+    'education',
+    'education-num',
+    'marital-status',
+    'occupation',
+    'relationship',
+    'race',
+    'sex',
+    'capital-gain',
+    'capital-loss',
+    'hours-per-week',
+    'native-country',
+    'income',
+  ]
 
 
-_CSV_COLUMNS = [
-    'age', 'workclass', 'fnlwgt', 'education', 'education_num',
-    'marital_status', 'occupation', 'relationship', 'race', 'gender',
-    'capital_gain', 'capital_loss', 'hours_per_week', 'native_country',
-    'income_bracket'
-]
-
-_CSV_COLUMN_DEFAULTS = [[0], [''], [0], [''], [0], [''], [''], [''], [''], [''],
-                        [0], [0], [0], [''], ['']]
-
-_HASH_BUCKET_SIZE = 1000
-
-_NUM_EXAMPLES = {
-    'train': 32561,
-    'validation': 16281,
-}
-
-
-def _download_and_clean_file(filename, url):
-  """Downloads data from url, and makes changes to match the CSV format."""
-  temp_file, _ = urllib.request.urlretrieve(url)
-  with tf.gfile.Open(temp_file, 'r') as temp_eval_file:
-    with tf.gfile.Open(filename, 'w') as eval_file:
-      for line in temp_eval_file:
-        line = line.strip()
-        line = line.replace(', ', ',')
-        if not line or ',' not in line:
-          continue
-        if line[-1] == '.':
-          line = line[:-1]
-        line += '\n'
-        eval_file.write(line)
-  tf.gfile.Remove(temp_file)
-
-
-def download(data_dir):
+def download(data_dir, path=DATA_URL):
   """Download census data if it is not already present."""
-  tf.gfile.MakeDirs(data_dir)
+  if not os.path.exists(data_dir):
+     os.mkdir(data_dir)
 
   training_file_path = os.path.join(data_dir, TRAINING_FILE)
-  if not tf.gfile.Exists(training_file_path):
-    _download_and_clean_file(training_file_path, TRAINING_URL)
+  if not os.path.exists(training_file_path):
+    response = requests.get(TRAINING_URL)
+    name = os.path.basename(TRAINING_URL)
+    with open(os.path.join(data_dir, name), 'wb') as f:
+        f.write(response.content)
 
   eval_file_path = os.path.join(data_dir, EVAL_FILE)
-  if not tf.gfile.Exists(eval_file_path):
-    _download_and_clean_file(eval_file_path, EVAL_URL)
+  if not os.path.exists(eval_file_path):
+    response = requests.get(EVAL_URL)
+    name = os.path.basename(EVAL_URL)
+    with open(os.path.join(data_dir, name), 'wb') as f:
+        f.write(response.content)
+    
+ 
+ 
+def load_data_train():
+    # Load the training and test data, skipping the bad row in the test data
+    train = pd.read_csv('/tmp/adult.data', names=names)
+    #train = np.loadtxt('/tmp/adult.data', delimiter=',', skiprows=1)
+    #train = np.genfromtxt('/tmp/adult.data', delimiter=',', dtype=None, missing_values='?', encoding=None, filling_values=0.0)
 
+    logging.warning('train is %s', train)
+    logging.warning('train shape is %s', train.shape)
+    logging.warning('train types is %s', train.dtypes)
+    
+    train['income'] = train['income'].astype('str') 
 
-def build_model_columns():
-  """Builds a set of wide and deep feature columns."""
-  # Continuous variable columns
-  age = tf.feature_column.numeric_column('age')
-  education_num = tf.feature_column.numeric_column('education_num')
-  capital_gain = tf.feature_column.numeric_column('capital_gain')
-  capital_loss = tf.feature_column.numeric_column('capital_loss')
-  hours_per_week = tf.feature_column.numeric_column('hours_per_week')
+    data = train.iloc[:, :-1]
+    target = train.iloc[:, -1]
+    
+    target_numeric = target.copy()
+    idx_low = train['income'] == ' <=50K'
+    idx_high = train['income'] == ' >50K'
+    target_numeric.loc[idx_low] = 0
+    target_numeric.loc[idx_high] = 1
+    
+    logging.warning('target_numeric is %s', target_numeric)
+    
+    #column_trans = make_column_transformer((OneHotEncoder(handle_unknown='ignore'),
+    #                                    ['occupation', 'relationship', 'marital-status', 'race', 'sex', 'native-country']),
+    #                                  (OrdinalEncoder(), ['workclass', 'education']),
+    #                                  remainder='passthrough')
+                                      
+    column_trans = OneHotEncoder(handle_unknown='ignore')                                
+                                      
+    data = column_trans.fit_transform(data)
+    logging.warning('data encoded is %s', data)
+    logging.warning('data encoded shape is %s', data.shape)
+    
+    epoch_files = ''
+    
+    # Zip up preprocess model and store in s3 (to use for inference)
+    with open('/tmp/preprocess.pickle', 'wb') as f:
+        pickle.dump(column_trans, f)
 
-  education = tf.feature_column.categorical_column_with_vocabulary_list(
-      'education', [
-          'Bachelors', 'HS-grad', '11th', 'Masters', '9th', 'Some-college',
-          'Assoc-acdm', 'Assoc-voc', '7th-8th', 'Doctorate', 'Prof-school',
-          '5th-6th', '10th', '1st-4th', 'Preschool', '12th'])
+    boto3.Session(
+        ).resource('s3'
+        ).Bucket(BUCKET
+        ).Object(os.path.join(epoch_files,'preprocess.pickle')
+        ).upload_file(FILE_DIR+'preprocess.pickle')
+    
+    # Return the bunch with the appropriate data chunked apart
+    return Bunch(
+        data = data,
+        target_numeric = target_numeric,
+        target_names = ['income'],
+        feature_names = names,
+        encoder = column_trans
+        #categorical_features = meta['categorical_features'],
+    )  
+ 
+ 
+def load_data_test(encoder):
+    # Load the training and test data, skipping the bad row in the test data
+    test = pd.read_csv('/tmp/adult.test', names=names, skiprows=1)
+   
+    logging.warning('test is %s', test)
+    logging.warning('test.shape is %s', test.shape)
+    
+    test['income'] = test['income'].astype('str') 
 
-  marital_status = tf.feature_column.categorical_column_with_vocabulary_list(
-      'marital_status', [
-          'Married-civ-spouse', 'Divorced', 'Married-spouse-absent',
-          'Never-married', 'Separated', 'Married-AF-spouse', 'Widowed'])
-
-  relationship = tf.feature_column.categorical_column_with_vocabulary_list(
-      'relationship', [
-          'Husband', 'Not-in-family', 'Wife', 'Own-child', 'Unmarried',
-          'Other-relative'])
-
-  workclass = tf.feature_column.categorical_column_with_vocabulary_list(
-      'workclass', [
-          'Self-emp-not-inc', 'Private', 'State-gov', 'Federal-gov',
-          'Local-gov', '?', 'Self-emp-inc', 'Without-pay', 'Never-worked'])
-
-  # To show an example of hashing:
-  occupation = tf.feature_column.categorical_column_with_hash_bucket(
-      'occupation', hash_bucket_size=_HASH_BUCKET_SIZE)
-
-  # Transformations.
-  age_buckets = tf.feature_column.bucketized_column(
-      age, boundaries=[18, 25, 30, 35, 40, 45, 50, 55, 60, 65])
-
-  # Wide columns and deep columns.
-  base_columns = [
-      education, marital_status, relationship, workclass, occupation,
-      age_buckets,
-  ]
-
-  crossed_columns = [
-      tf.feature_column.crossed_column(
-          ['education', 'occupation'], hash_bucket_size=_HASH_BUCKET_SIZE),
-      tf.feature_column.crossed_column(
-          [age_buckets, 'education', 'occupation'],
-          hash_bucket_size=_HASH_BUCKET_SIZE),
-  ]
-
-  wide_columns = base_columns + crossed_columns
-
-  deep_columns = [
-      age,
-      education_num,
-      capital_gain,
-      capital_loss,
-      hours_per_week,
-      tf.feature_column.indicator_column(workclass),
-      tf.feature_column.indicator_column(education),
-      tf.feature_column.indicator_column(marital_status),
-      tf.feature_column.indicator_column(relationship),
-      # To show an example of embedding
-      tf.feature_column.embedding_column(occupation, dimension=8),
-  ]
-
-  return wide_columns, deep_columns
-
-
-def input_fn(data_file, num_epochs, shuffle, batch_size):
-  """Generate an input function for the Estimator."""
-  assert tf.gfile.Exists(data_file), (
-      '%s not found. Please make sure you have run census_dataset.py and '
-      'set the --data_dir argument to the correct path.' % data_file)
-
-  def parse_csv(value):
-    tf.logging.info('Parsing {}'.format(data_file))
-    columns = tf.decode_csv(value, record_defaults=_CSV_COLUMN_DEFAULTS)
-    features = dict(zip(_CSV_COLUMNS, columns))
-    labels = features.pop('income_bracket')
-    classes = tf.equal(labels, '>50K')  # binary classification
-    return features, classes
-
-  # Extract lines from input files using the Dataset API.
-  dataset = tf.data.TextLineDataset(data_file)
-
-  if shuffle:
-    dataset = dataset.shuffle(buffer_size=_NUM_EXAMPLES['train'])
-
-  dataset = dataset.map(parse_csv, num_parallel_calls=5)
-
-  # We call repeat after shuffling, rather than before, to prevent separate
-  # epochs from blending together.
-  dataset = dataset.repeat(num_epochs)
-  dataset = dataset.batch(batch_size)
-  return dataset
+    data = test.iloc[:, :-1]
+    target = test.iloc[:, -1]
+    
+    target_numeric = target.copy()
+    idx_low = test['income'] == ' <=50K.'
+    idx_high = test['income'] == ' >50K.'
+    target_numeric.loc[idx_low] = 0
+    target_numeric.loc[idx_high] = 1
+    
+    logging.warning('target_numeric is %s', target_numeric)
+    
+    data1 = encoder.transform(data.head(1))
+    logging.warning('data1 point is %s', data1)
+    
+    logging.warning('data columns is %s', data.columns)
+    logging.warning('data types is %s', data.dtypes)
+    logging.warning('data raw is %s', data)
+    logging.warning('data raw age is %s', data.age)
+    logging.warning('data raw workclass is %s', data.workclass)
+    data = encoder.transform(data)
+    logging.warning('data encoded is %s', data)
+        
+    # Return the bunch with the appropriate data chunked apart
+    return Bunch(
+        data = data,
+        target_numeric = target_numeric,
+        target_names = ['income'],
+        feature_names = names,
+        encoder = encoder
+        #categorical_features = meta['categorical_features'],
+    )  
+ 
+ 
+    
+    
+    

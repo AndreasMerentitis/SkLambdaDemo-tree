@@ -9,8 +9,6 @@ import time
 
 import boto3
 
-from census import Census
-
 import logging
 
 logger = logging.getLogger()
@@ -22,7 +20,7 @@ BUCKET = os.environ['BUCKET']
 
 def uploadHandler(event, context):
     # Download data to local tmp directory
-    #census_data.download(FILE_DIR)
+    census_data.download(FILE_DIR)
 
     # Upload files to S3
     time_now = str(int(time.time()))
