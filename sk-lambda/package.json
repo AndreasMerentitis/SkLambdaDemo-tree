@@ -1,0 +1,8 @@
+{
+  "name": "sk-lambda",
+  "description": "",
+  "version": "0.1.0",
+  "devDependencies": {
+    "serverless-python-requirements": "^6.0.0"
+  }
+}
