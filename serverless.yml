@@ -52,29 +52,29 @@ functions:
           path: train
           method: post
 
-  #infer:
-  #  handler: infer.inferHandler
-  #  layers:
-  #    - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
-  #    - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
-  #  memorySize: 3008
-  #  timeout: 30
-  #  events:
-  #    - http:
-  #        path: infer
-  #        method: post
+  infer:
+    handler: infer.inferHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
+    memorySize: 3008
+    timeout: 30
+    events:
+      - http:
+          path: infer
+          method: post
 
-  #inferqueue:
-  #  handler: inferqueue.inferqueueHandler
-  #  layers:
-  #    - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
-  #    - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
-  #  memorySize: 3008
-  #  timeout: 30
-  #  events:
-  #    - http:
-  #        path: inferqueue
-  #        method: post
+  inferqueue:
+    handler: inferqueue.inferqueueHandler
+    layers:
+      - arn:aws:lambda:us-east-1:113088814899:layer:Klayers-python37-numpy:10
+      - arn:aws:lambda:us-east-1:446751924810:layer:python-3-7-scikit-learn-0-23-1:2
+    memorySize: 3008
+    timeout: 30
+    events:
+      - http:
+          path: inferqueue
+          method: post
 
 
 custom:

@@ -8,6 +8,7 @@ import json
 import time
 
 import boto3
+import census_data
 
 import logging
 
