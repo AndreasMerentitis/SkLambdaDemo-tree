@@ -57,38 +57,21 @@ def trainHandler(event, context):
             os.path.join(epoch_files,census_data.EVAL_FILE),
             FILE_DIR+census_data.EVAL_FILE)
 
-    # Create feature columns
-    wide_cols, deep_cols = census_data.build_model_columns()
-    
-    logging.warning('wide_cols are %s', wide_cols)
-    logging.warning('deep_cols are %s', deep_cols)
-
-    # Setup estimator
-    #classifier = tf.estimator.LinearClassifier(
-    #                    feature_columns=wide_cols,
-    #                    model_dir=FILE_DIR+'model_'+epoch_files+'/')
-                        
     # Setup estimator              
-    classifier = DecisionTreeClassifier(random_state=0)
+    clf = DecisionTreeClassifier(random_state=0)
 
-    # Create callable input function and execute train
-    train_inpf = functools.partial(
-                    census_data.input_fn,
-                    FILE_DIR+census_data.TRAINING_FILE,
-                    num_epochs=2, shuffle=True,
-                    batch_size=64)
+    train_Bunch = census_data.load_data_train()
+    logging.warning('train_Bunch is %s', train_Bunch)
 
-    classifier.fit(train_inpf)
+    clf.fit(train_Bunch.data, train_Bunch.target_numeric.astype(int))
+                      
+    test_Bunch = census_data.load_data_test(train_Bunch.encoder)
+    logging.warning('test_Bunch is %s', test_Bunch)
 
-    # Create callable input function and execute evaluation
-    test_inpf = functools.partial(
-                    census_data.input_fn,
-                    FILE_DIR+census_data.EVAL_FILE,
-                    num_epochs=1, shuffle=False,
-                    batch_size=64)
-
-    result = classifier.predict(test_inpf)
-    print('Evaluation result: %s' % result)
+    predictions = clf.predict(test_Bunch.data)
+    
+    result = classification_report(test_Bunch.target_numeric.astype(int), predictions, target_names=['low income', 'high income'])
+    logging.warning('Evaluation result is %s', result)
 
     # Zip up model files and store in s3
     with open('/tmp/classifier.pickle', 'wb') as f:
@@ -99,11 +82,6 @@ def trainHandler(event, context):
         ).Bucket(BUCKET
         ).Object(os.path.join(epoch_files,'classifier.pickle')
         ).upload_file(FILE_DIR+'classifier.pickle')
-
-
-    # Convert result from float32 for json serialization
-    for key in result:
-        result[key] = result[key].item()
 
     response = {
         "statusCode": 200,
