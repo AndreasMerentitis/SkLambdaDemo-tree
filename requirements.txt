@@ -5,10 +5,6 @@ itsdangerous==1.1.0
 Jinja2==2.11.2
 MarkupSafe==1.1.1
 Werkzeug==0.15.2
-#numpy==1.18.4
 pandas==1.0.5
 #pip==21.3.1
-#protobuf==3.19.4 
-#scikit-learn==0.24.2
-#census==0.8.19 
-#h5py==2.9.0
+

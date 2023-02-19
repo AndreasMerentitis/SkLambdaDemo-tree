@@ -5,6 +5,7 @@ except ImportError:
 
 import os
 import json
+import pickle
 import time
 import functools
 import tarfile
