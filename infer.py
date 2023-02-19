@@ -8,7 +8,6 @@ import os
 import tarfile
 
 import boto3
-#import tensorflow as tf
 import numpy as np
 
 import census_data
@@ -99,6 +98,7 @@ def inferHandler(event, context):
         run_from_queue = True
         body = event
 
+    logging.warning('body is %s', body)
     # Read in prediction data as dictionary
     # Keys should match _CSV_COLUMNS, values should be lists
     predict_input = body['input']
