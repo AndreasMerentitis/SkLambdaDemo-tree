@@ -20,6 +20,23 @@ logger.setLevel(logging.WARNING)
 FILE_DIR = '/tmp/'
 BUCKET = os.environ['BUCKET']
 
+names = [
+    'age',
+    'workclass',
+    'fnlwgt',
+    'education',
+    'education-num',
+    'marital-status',
+    'occupation',
+    'relationship',
+    'race',
+    'sex',
+    'capital-gain',
+    'capital-loss',
+    'hours-per-week',
+    'native-country',
+    'income',
+  ]
 
 def _easy_input_function(data_dict, batch_size=64):
     """
@@ -52,39 +69,59 @@ def _predict_point(predict_input_point, epoch_files):
     """
     Makes predictions for a signle data point
     """
+    
+    logging.warning('predict_input_point is %s', predict_input_point)
+    
+    df_predict_input_point = pd.DataFrame.from_dict(predict_input_point, orient='columns')
+    df_predict_input_point.columns = names
+    logging.warning('df_predict_input_point shape is %s', df_predict_input_point.shape)
+    
+    df_predict_input_point = df_predict_input_point.iloc[:, :-1]
+    
+    df_predict_input_point['age'] = df_predict_input_point['age'].astype('int') 
+    df_predict_input_point['fnlwgt'] = df_predict_input_point['fnlwgt'].astype('int') 
+    df_predict_input_point['education-num'] = df_predict_input_point['education-num'].astype('int') 
+    df_predict_input_point['capital-gain'] = df_predict_input_point['capital-gain'].astype('int') 
+    df_predict_input_point['capital-loss'] = df_predict_input_point['capital-loss'].astype('int') 
+    df_predict_input_point['hours-per-week'] = df_predict_input_point['hours-per-week'].astype('int') 
+    
+    logging.warning('data columns is %s', df_predict_input_point.columns)
+    logging.warning('data types is %s', df_predict_input_point.dtypes)
+    logging.warning('data raw is %s', df_predict_input_point)
+    logging.warning('data raw age is %s', df_predict_input_point.age)
+    logging.warning('data raw workclass is %s', df_predict_input_point.workclass)
+    
+    # Download model from S3 and extract
+    boto3.Session(
+        ).resource('s3'
+        ).Bucket(BUCKET
+        ).download_file(
+            os.path.join(epoch_files,'preprocess.pickle'),
+            FILE_DIR+'preprocess.pickle')
 
     # Download model from S3 and extract
     boto3.Session(
         ).resource('s3'
         ).Bucket(BUCKET
         ).download_file(
-            os.path.join(epoch_files,'model.tar.gz'),
-            FILE_DIR+'model.tar.gz')
+            os.path.join(epoch_files,'classifier.pickle'),
+            FILE_DIR+'classifier.pickle')
 
-    tarfile.open(FILE_DIR+'model.tar.gz', 'r').extractall(FILE_DIR)
+    # Load preprocess transformation pipeline
+    encoder = pickle.load(open(FILE_DIR+'preprocess.pickle', 'rb'))
+    logging.warning('encoder is %s', encoder)
 
-    # Create feature columns
-    wide_cols, deep_cols = census_data.build_model_columns()
+    df_predict_input_point_final = encoder.transform(df_predict_input_point)
+    logging.warning('df_predict_input_point_final is %s', df_predict_input_point_final)
 
     # Load model
-    classifier = tf.estimator.LinearClassifier(
-                    feature_columns=wide_cols,
-                    model_dir=FILE_DIR+'tmp/model_'+epoch_files+'/',
-                    warm_start_from=FILE_DIR+'tmp/model_'+epoch_files+'/')
+    clf = pickle.load(open(FILE_DIR+'classifier.pickle', 'rb'))
+    logging.warning('clf is %s', clf)
 
     # Setup prediction
-    predict_iter = classifier.predict(
-                        lambda:_easy_input_function(predict_input_point))
-
-    # Iterate over prediction and convert to lists
-    predictions = []
-    for prediction in predict_iter:
-        for key in prediction:
-            prediction[key] = prediction[key].tolist()
-
-        predictions.append(prediction)
-
+    predictions = clf.predict(df_predict_input_point_final)
     logging.warning('predictions is %s', predictions)
+    
     return predictions
 
 
