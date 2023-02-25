@@ -7,6 +7,7 @@ import json
 import os
 import pickle
 import tarfile
+import time
 
 import boto3
 import numpy as np
@@ -177,8 +178,7 @@ def inferHandler(event, context):
         logging.warning('Return from normal execution')
         response = {
            "statusCode": 200,
-           "body": json.dumps(predictions_batch,
-                            default=lambda x: x.decode('utf-8'))
+           "body": json.dumps(predictions_batch_dict)
         }
     else:
         logging.warning('Return from queue execution')
