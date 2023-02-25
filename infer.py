@@ -178,7 +178,7 @@ def inferHandler(event, context):
         logging.warning('Return from normal execution')
         response = {
            "statusCode": 200,
-           "body": json.dumps(predictions_batch_dict)
+           "body": json.dumps(predictions_batch)
         }
     else:
         logging.warning('Return from queue execution')
