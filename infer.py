@@ -174,11 +174,14 @@ def inferHandler(event, context):
         predictions = _predict_point(predict_input_point, epoch_files)
         predictions_batch.append(predictions)
 
+    logging.warning('predictions_batch is %s', predictions_batch)
+    predictions_batch_dict = {'predictions': predictions_batch}
+
     if not run_from_queue: 
         logging.warning('Return from normal execution')
         response = {
            "statusCode": 200,
-           "body": json.dumps(predictions_batch)
+           "body": json.dumps(predictions_batch_dict)
         }
     else:
         logging.warning('Return from queue execution')
