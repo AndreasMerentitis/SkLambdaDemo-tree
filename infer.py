@@ -5,6 +5,7 @@ except ImportError:
 
 import json
 import os
+import pickle
 import tarfile
 
 import boto3
