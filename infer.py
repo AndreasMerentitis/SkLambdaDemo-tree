@@ -40,33 +40,6 @@ names = [
     'native-country',
     'income',
   ]
-
-def _easy_input_function(data_dict, batch_size=64):
-    """
-    data_dict = {
-        '<csv_col_1>': ['<first_pred_value>', '<second_pred_value>']
-        '<csv_col_2>': ['<first_pred_value>', '<second_pred_value>']
-        ...
-    }
-    """
-
-    # Convert input data to numpy arrays
-    for col in data_dict:
-        col_ind = census_data._CSV_COLUMNS.index(col)
-        dtype = type(census_data._CSV_COLUMN_DEFAULTS[col_ind][0])
-        data_dict[col] = np.array(data_dict[col],
-                                        dtype=dtype)
-
-    try: 
-        labels = data_dict.pop('income_bracket')
-    except:
-        pass
-
-    ds = tf.data.Dataset.from_tensor_slices((data_dict, labels))
-    ds = ds.batch(64)
-
-    return ds
-    
     
 def _predict_point(predict_input_point, epoch_files):
     """
@@ -172,8 +145,11 @@ def inferHandler(event, context):
         # Direct call with one datapoint
         predict_input_point = predict_input
         predictions = _predict_point(predict_input_point, epoch_files)
-        predictions_batch.append(predictions)
+        predictions_batch.append(predictions.tolist())
 
+    # predictions_batch is [array([0])]
+    # predictions_batch is [[0]] (works)
+    
     logging.warning('predictions_batch is %s', predictions_batch)
     predictions_batch_dict = {'predictions': predictions_batch}
 
