@@ -23,7 +23,7 @@ def datapoint_classification_client():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-    with open('data_input_small.json') as json_file:  
+    with open('data_input.json') as json_file:  
         points = json.load(json_file)
 
     logger.info('Predicting...')
@@ -32,7 +32,7 @@ def datapoint_classification_client():
     method = 'POST'
     headers = {'Content-Type': 'application/json'} 
     service = 'execute-api'
-    url = 'https://z5ekmkl0t6.execute-api.eu-west-1.amazonaws.com/dev/inferqueue'
+    url = 'https://lqrum9vl92.execute-api.us-east-1.amazonaws.com/dev/inferqueue'
     region = 'us-east-1'
 
     print('')

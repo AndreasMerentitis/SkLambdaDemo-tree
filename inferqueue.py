@@ -8,7 +8,6 @@ import os
 import tarfile
 
 import boto3
-#import tensorflow as tf
 import numpy as np
 
 import census_data
@@ -51,7 +50,7 @@ def process_one_datapoint(executor, payload_one_item):
     logging.warning('payload_one_item_json from process_one_datapoint is %s', payload_one_item_json)
     
     predictions = executor.submit(lambda_client.invoke(
-            FunctionName='tflambdademo-dev-infer',
+            FunctionName='sk-lambda-dev-infer',
             InvocationType='RequestResponse',
             LogType='Tail',
             Payload=payload_one_item_json)
