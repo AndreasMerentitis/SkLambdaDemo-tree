@@ -32,8 +32,8 @@ def datapoint_classification_client():
     method = 'POST'
     headers = {'Content-Type': 'application/json'} 
     service = 'execute-api'
-    url = 'https://z5ekmkl0t6.execute-api.eu-west-1.amazonaws.com/dev/infer'
-    region = 'eu-west-1'
+    url = 'https://89dxba7gf1.execute-api.us-east-1.amazonaws.com/dev/infer'
+    region = 'us-east-1'
 
     print('')
     print(url)

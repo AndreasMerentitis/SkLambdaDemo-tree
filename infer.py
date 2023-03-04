@@ -131,7 +131,7 @@ def inferHandler(event, context):
         for jj in range(len(predict_input)):
             predict_input_point = predict_input[jj][0]
             predictions = _predict_point(predict_input_point, epoch_files)
-            predictions_batch.append(predictions)
+            predictions_batch.append(predictions.tolist())
     elif run_from_queue: 
         # Call from lambda queue
         predict_input_point = predict_input[0]
@@ -147,7 +147,7 @@ def inferHandler(event, context):
         predictions = _predict_point(predict_input_point, epoch_files)
         predictions_batch.append(predictions.tolist())
 
-    # predictions_batch is [array([0])]
+    # predictions_batch is [array([0])] (does not serialize)
     # predictions_batch is [[0]] (works)
     
     logging.warning('predictions_batch is %s', predictions_batch)

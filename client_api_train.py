@@ -29,8 +29,8 @@ def datapoint_classification_client():
     method = 'POST'
     headers = {'Content-Type': 'application/json'} 
     service = 'execute-api'
-    url1 = 'https://npwesw6pp2.execute-api.us-east-1.amazonaws.com/dev/upload'
-    url2 = 'https://npwesw6pp2.execute-api.us-east-1.amazonaws.com/dev/train'
+    url1 = 'https://89dxba7gf1.execute-api.us-east-1.amazonaws.com/dev/upload'
+    url2 = 'https://89dxba7gf1.execute-api.us-east-1.amazonaws.com/dev/train'
     region = 'us-east-1'
 
     print('')
