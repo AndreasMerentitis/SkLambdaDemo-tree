@@ -57,6 +57,9 @@ def process_one_datapoint(executor, payload_one_item):
         )
         
     logging.warning('predictions raw from process_one_datapoint is %s', predictions) 
+    
+    ### This is where the latest problem is (Mar 5 20223)
+    
     #logging.warning('predictions result from process_one_datapoint is %s', predictions.result())    
     
     responseFromChild = json.load(predictions['Payload'])

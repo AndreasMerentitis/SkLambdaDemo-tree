@@ -164,9 +164,13 @@ def inferHandler(event, context):
         response = {
            "statusCode": 200,
            #"body": json.dumps(predictions_batch, default=lambda x: x.decode('utf-8'))
-           "body": json.dumps(predictions_batch)
+           "body": json.dumps(predictions_batch_dict)
         }
         
+    # response is {'statusCode': 200, 'body': '[[0]]'} fails from inferqueue
+    # response is {'statusCode': 200, 'body': '{"predictions": [[0], [0]]}'} works from infer
+
+    
     logging.warning('response is %s', response)
 
     return response
