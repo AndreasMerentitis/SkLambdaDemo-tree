@@ -140,7 +140,7 @@ def inferHandler(event, context):
         logging.warning('predict_input_point is %s', predict_input_point)
         predictions = _predict_point(predict_input_point, epoch_files)
         logging.warning('predictions is %s', predictions)
-        predictions_batch.append(predictions)
+        predictions_batch.append(predictions.tolist())
     else: 
         # Direct call with one datapoint
         predict_input_point = predict_input
@@ -163,8 +163,8 @@ def inferHandler(event, context):
         logging.warning('Return from queue execution')
         response = {
            "statusCode": 200,
-           "body": json.dumps(predictions_batch,
-                            default=lambda x: x.decode('utf-8'))
+           #"body": json.dumps(predictions_batch, default=lambda x: x.decode('utf-8'))
+           "body": json.dumps(predictions_batch)
         }
         
     logging.warning('response is %s', response)
