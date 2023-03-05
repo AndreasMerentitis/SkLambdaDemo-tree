@@ -164,7 +164,7 @@ def inferHandler(event, context):
         #logging.warning('predictions_batch decoded is %s', predictions_batch.decode('utf-8'))
         response = {
            "statusCode": 200,
-           "body": json.dumps(predictions_batch, default=lambda x: x.decode('utf-8'))
+           "body": json.dumps(predictions_batch_dict, default=lambda x: x.decode('utf-8'))
            #"body": json.dumps(predictions_batch_dict)
         }
         
