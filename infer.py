@@ -163,7 +163,7 @@ def inferHandler(event, context):
         logging.warning('Return from queue execution')
         #logging.warning('predictions_batch decoded is %s', predictions_batch.decode('utf-8'))
         response = {
-           "statusCode": 200,
+           "statusCode": 0,
            #"body": json.dumps(predictions_batch_dict, default=lambda x: x.decode('utf-8'))
            "body": json.dumps(predictions_batch_dict)
         }
