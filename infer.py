@@ -152,6 +152,7 @@ def inferHandler(event, context):
     
     logging.warning('predictions_batch is %s', predictions_batch)
     predictions_batch_dict = {'predictions': predictions_batch}
+    logging.warning('predictions_batch_dict is %s', predictions_batch_dict)
 
     if not run_from_queue: 
         logging.warning('Return from normal execution')
