@@ -147,8 +147,8 @@ def inferHandler(event, context):
         predictions = _predict_point(predict_input_point, epoch_files)
         predictions_batch.append(predictions.tolist())
 
-    # predictions_batch is [array([0])] (does not serialize)
-    # predictions_batch is [[0]] (works)
+    # predictions_batch is [array([0])] (does not serialize in infer)
+    # predictions_batch is [[0]] (works) (in infer)
     
     logging.warning('predictions_batch is %s', predictions_batch)
     predictions_batch_dict = {'predictions': predictions_batch}
@@ -164,10 +164,10 @@ def inferHandler(event, context):
         logging.warning('Return from queue execution')
         #logging.warning('predictions_batch decoded is %s', predictions_batch.decode('utf-8'))
         response = {
-           "statusCode": 0,
+           "statusCode": 200,
            #"body": json.dumps(predictions_batch_dict, default=lambda x: x.decode('utf-8'))
            #"body": json.dumps(predictions_batch, default=lambda x: x.decode('utf-8'))
-           "body": json.dumps(predictions_batch[0])
+           "body": json.dumps(predictions_batch)
         }
         
     # predictions_batch_dict is {'predictions': [[0]]}
@@ -176,13 +176,11 @@ def inferHandler(event, context):
     
     # response is {'statusCode': 200, 'body': '{"predictions": [[0], [0]]}'} works from infer
 
-        
     # response is {'statusCode': 200, 'body': '[[0]]'} fails from inferqueue
     # response is {'statusCode': 200, 'body': '{"predictions": [[0]]}'} fails from inferqueue
     # response is {'statusCode': 0, 'body': '[[0]]'} fails from inferqueue
-    # {'statusCode': 0, 'body': '[[0]]'}
+    # response is {'statusCode': 0, 'body': '[0]'} fails from inferqueue
 
-    
     logging.warning('response is %s', response)
 
     return response
