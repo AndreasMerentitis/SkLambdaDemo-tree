@@ -178,7 +178,7 @@ def inferHandler(event, context):
 
     # response is {'statusCode': 200, 'body': '[[0]]'} fails from inferqueue
     # response is {'statusCode': 200, 'body': '{"predictions": [[0]]}'} fails from inferqueue
-    # response is {'statusCode': 0, 'body': '[[0]]'} fails from inferqueue
+    # response is {'statusCode': 0, 'body': '[[0]]'} fails from inferqueue (json.dumps(predictions_batch))
     # response is {'statusCode': 0, 'body': '[0]'} fails from inferqueue
 
     logging.warning('response is %s', response)
